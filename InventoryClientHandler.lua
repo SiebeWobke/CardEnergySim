@@ -5,7 +5,14 @@ local inventoryFrame = inventoryGui:WaitForChild("InventoryFrame")
 local inventoryScrollingFrame = inventoryFrame:WaitForChild("InventoryScrollingFrame")
 local petTemplate = inventoryScrollingFrame:WaitForChild("PetTemplate")
 local openInventoryButton = player:WaitForChild("PlayerGui"):WaitForChild("MainGui"):WaitForChild("OpenInventoryButton")
+local petNotificationGui = player:WaitForChild("PlayerGui"):WaitForChild("PetNotificationGui")
+local petNotificationFrame = petNotificationGui:WaitForChild("PetNotificationFrame")
+
+-- Add this line to define the event
 local updateInventoryEvent = replicatedStorage:WaitForChild("UpdateInventoryEvent")
+
+-- Hide notification frame initially
+petNotificationFrame.Visible = false
 
 -- Function to update the inventory UI
 local function updateInventoryUI()
@@ -24,11 +31,11 @@ local function updateInventoryUI()
 
 		-- Count the number of each item
 		for _, pet in pairs(inventory:GetChildren()) do
-			if pet:IsA("IntValue") then
+			if pet:IsA("StringValue") then
 				if itemCounts[pet.Name] then
-					itemCounts[pet.Name] = itemCounts[pet.Name] + pet.Value
+					itemCounts[pet.Name] = itemCounts[pet.Name] + tonumber(pet.Value)
 				else
-					itemCounts[pet.Name] = pet.Value
+					itemCounts[pet.Name] = tonumber(pet.Value)
 				end
 			end
 		end
@@ -81,14 +88,12 @@ end
 openInventoryButton.MouseButton1Click:Connect(toggleInventory)
 
 -- Function to show pet notification
-local function showPetNotification(petNames)
-	local notificationLabel = player:WaitForChild("PlayerGui"):WaitForChild("PetNotificationGui"):WaitForChild("PetNotificationFrame"):WaitForChild("NotificationLabel")
-	for _, petName in pairs(petNames) do
-		notificationLabel.Text = "You received a pet: " .. petName
-		notificationLabel.Visible = true
-		wait(1.5)
-		notificationLabel.Visible = false
-	end
+local function showPetNotification(petName)
+	local notificationLabel = petNotificationFrame:WaitForChild("NotificationLabel")
+	notificationLabel.Text = "You received a pet: " .. petName
+	petNotificationFrame.Visible = true
+	wait(3)
+	petNotificationFrame.Visible = false
 end
 
 -- Listen for pet notification event
