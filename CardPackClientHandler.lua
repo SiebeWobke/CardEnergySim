@@ -27,7 +27,11 @@ local function updateInventoryUI()
 	if inventory then
 		for _, pet in pairs(inventory:GetChildren()) do
 			local newPetLabel = petTemplate:Clone()
-			newPetLabel.Text = pet.Name
+			if tonumber(pet.Value) > 1 then
+				newPetLabel.Text = pet.Name .. " x" .. pet.Value
+			else
+				newPetLabel.Text = pet.Name
+			end
 			newPetLabel.Visible = true
 			newPetLabel.Parent = inventoryScrollingFrame
 		end
@@ -62,9 +66,9 @@ end
 openInventoryButton.MouseButton1Click:Connect(toggleInventory)
 
 -- Function to show pet notification
-local function showPetNotification(petName)
+local function showPetNotification(petNames)
 	local notificationLabel = petNotificationFrame:WaitForChild("NotificationLabel")
-	notificationLabel.Text = "You received a pet: " .. petName
+	notificationLabel.Text = "You received pets: " .. table.concat(petNames, ", ")
 	petNotificationFrame.Visible = true
 	wait(3)
 	petNotificationFrame.Visible = false
@@ -72,3 +76,6 @@ end
 
 -- Listen for pet notification event
 replicatedStorage:WaitForChild("PetNotificationEvent").OnClientEvent:Connect(showPetNotification)
+
+-- Listen for inventory update event
+replicatedStorage:WaitForChild("UpdateInventoryEvent").OnClientEvent:Connect(updateInventoryUI)
