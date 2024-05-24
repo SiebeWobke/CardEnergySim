@@ -1,6 +1,7 @@
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local petNotificationEvent = replicatedStorage:WaitForChild("PetNotificationEvent")
 local openCardPackEvent = replicatedStorage:WaitForChild("OpenCardPackEvent")
+local updateInventoryEvent = replicatedStorage:WaitForChild("UpdateInventoryEvent")
 local Players = game:GetService("Players")
 local DataStoreService = game:GetService("DataStoreService")
 
@@ -116,33 +117,7 @@ local function addPetToInventory(player, petName)
 	end
 end
 
-local function addMultiplePetsToInventory(player, petNames)
-	local inventory = player:FindFirstChild("Inventory")
-	if inventory then
-		for _, petName in ipairs(petNames) do
-			local existingPet = inventory:FindFirstChild(petName)
-			if existingPet then
-				local count = tonumber(existingPet.Value) or 1
-				existingPet.Value = tostring(count + 1)
-			else
-				local pet = Instance.new("StringValue")
-				pet.Name = petName
-				pet.Value = "1"
-				pet.Parent = inventory
-			end
-		end
-
-		-- Save the inventory
-		saveInventory(player)
-
-		-- Fire the client event to show the pet notification
-		petNotificationEvent:FireClient(player, petNames)
-	else
-		warn("Failed to add pets to inventory. Inventory not found for player " .. player.Name)
-	end
-end
-
-local function getRandomPets(luck, numPets)
+local function getRandomPets(luck, count)
 	local pets = {"W1EGG1P1", "W1EGG1P2", "W1EGG1P3", "W1EGG1P4", "W1EGG1P5"}
 	local chances = {10, 20, 30, 25, 15} -- Base chances for each pet
 	local totalChance = 0
@@ -154,7 +129,7 @@ local function getRandomPets(luck, numPets)
 	end
 
 	local selectedPets = {}
-	for _ = 1, numPets do
+	for _ = 1, count do
 		local randomValue = math.random(1, totalChance)
 		local cumulativeChance = 0
 
@@ -185,8 +160,13 @@ game.Players.PlayerAdded:Connect(function(player)
 		if energy and energy.Value >= 1 then
 			energy.Value = energy.Value - 1
 
-			local petNames = getRandomPets(luck, 5) -- Get 5 random pets
-			addMultiplePetsToInventory(player, petNames)
+			local petNames = getRandomPets(luck, 5)
+			for _, petName in pairs(petNames) do
+				addPetToInventory(player, petName)
+			end
+
+			-- Fire the client event to update the inventory UI
+			updateInventoryEvent:FireClient(player)
 		else
 			warn("Not enough energy to open the card pack for player " .. player.Name)
 		end
