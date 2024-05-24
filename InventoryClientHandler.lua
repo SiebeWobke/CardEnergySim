@@ -1,19 +1,15 @@
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
-local updateInventoryEvent = replicatedStorage:WaitForChild("UpdateInventoryEvent")
 local inventoryGui = player:WaitForChild("PlayerGui"):WaitForChild("InventoryGui")
 local inventoryFrame = inventoryGui:WaitForChild("InventoryFrame")
 local inventoryScrollingFrame = inventoryFrame:WaitForChild("InventoryScrollingFrame")
 local petTemplate = inventoryScrollingFrame:WaitForChild("PetTemplate")
 local openInventoryButton = player:WaitForChild("PlayerGui"):WaitForChild("MainGui"):WaitForChild("OpenInventoryButton")
-local petNotificationGui = player:WaitForChild("PlayerGui"):WaitForChild("PetNotificationGui")
-local petNotificationFrame = petNotificationGui:WaitForChild("PetNotificationFrame")
-
--- Hide notification frame initially
-petNotificationFrame.Visible = false
+local updateInventoryEvent = replicatedStorage:WaitForChild("UpdateInventoryEvent")
 
 -- Function to update the inventory UI
 local function updateInventoryUI()
+	print("Updating inventory UI") -- Debugging
 	-- Clear existing items
 	for _, child in pairs(inventoryScrollingFrame:GetChildren()) do
 		if child:IsA("TextLabel") and child ~= petTemplate then
@@ -48,6 +44,8 @@ local function updateInventoryUI()
 			newPetLabel.Visible = true
 			newPetLabel.Parent = inventoryScrollingFrame
 		end
+	else
+		print("No inventory found for player") -- Debugging
 	end
 
 	-- Adjust the canvas size of the scrolling frame
@@ -57,6 +55,7 @@ end
 -- Event to update the inventory UI when the inventory changes
 player.ChildAdded:Connect(function(child)
 	if child.Name == "Inventory" then
+		print("Inventory added to player") -- Debugging
 		child.ChildAdded:Connect(updateInventoryUI)
 		child.ChildRemoved:Connect(updateInventoryUI)
 		updateInventoryUI()
@@ -65,9 +64,12 @@ end)
 
 -- Initial update
 if player:FindFirstChild("Inventory") then
+	print("Player already has an inventory") -- Debugging
 	player.Inventory.ChildAdded:Connect(updateInventoryUI)
 	player.Inventory.ChildRemoved:Connect(updateInventoryUI)
 	updateInventoryUI()
+else
+	print("Player does not have an inventory initially") -- Debugging
 end
 
 -- Function to toggle the inventory frame visibility
@@ -80,11 +82,13 @@ openInventoryButton.MouseButton1Click:Connect(toggleInventory)
 
 -- Function to show pet notification
 local function showPetNotification(petNames)
-	local notificationLabel = petNotificationFrame:WaitForChild("NotificationLabel")
-	notificationLabel.Text = "You received pets: " .. table.concat(petNames, ", ")
-	petNotificationFrame.Visible = true
-	wait(3)
-	petNotificationFrame.Visible = false
+	local notificationLabel = player:WaitForChild("PlayerGui"):WaitForChild("PetNotificationGui"):WaitForChild("PetNotificationFrame"):WaitForChild("NotificationLabel")
+	for _, petName in pairs(petNames) do
+		notificationLabel.Text = "You received a pet: " .. petName
+		notificationLabel.Visible = true
+		wait(1.5)
+		notificationLabel.Visible = false
+	end
 end
 
 -- Listen for pet notification event
