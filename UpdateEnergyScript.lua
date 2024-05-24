@@ -1,4 +1,3 @@
--- UpdateEnergyScript.lua
 local player = game.Players.LocalPlayer
 local leaderstats = player:WaitForChild("leaderstats")
 local energy = leaderstats:WaitForChild("Energy")
