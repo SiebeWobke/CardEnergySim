@@ -1,3 +1,4 @@
+-- CardPackHandler.lua
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local petNotificationEvent = replicatedStorage:WaitForChild("PetNotificationEvent")
 local openCardPackEvent = replicatedStorage:WaitForChild("OpenCardPackEvent")
@@ -8,7 +9,6 @@ local InventoryDataStore = DataStoreService:GetDataStore("InventoryDataStore")
 local SAVE_COOLDOWN = 6 -- 6 seconds cooldown for saving
 local pendingSaves = {}
 local debounce = {}
-local CARD_PACK_COST = 1 -- Set the fixed cost of opening a card pack
 
 local function saveInventory(player)
 	local userId = player.UserId
@@ -127,8 +127,8 @@ game.Players.PlayerAdded:Connect(function(player)
 	openCardPackEvent.OnServerEvent:Connect(function(player)
 		local leaderstats = player:FindFirstChild("leaderstats")
 		local energy = leaderstats and leaderstats:FindFirstChild("Energy")
-		if energy and energy.Value >= CARD_PACK_COST then
-			energy.Value = energy.Value - CARD_PACK_COST
+		if energy and energy.Value >= 25 then
+			energy.Value = energy.Value - 25
 
 			local pets = {"W1EGG1P1", "W1EGG1P2", "W1EGG1P3", "W1EGG1P4", "W1EGG1P5"}
 			local petName = pets[math.random(#pets)]
