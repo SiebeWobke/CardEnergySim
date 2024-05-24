@@ -68,7 +68,11 @@ openInventoryButton.MouseButton1Click:Connect(toggleInventory)
 -- Function to show pet notification
 local function showPetNotification(petNames)
 	local notificationLabel = petNotificationFrame:WaitForChild("NotificationLabel")
-	notificationLabel.Text = "You received pets: " .. table.concat(petNames, ", ")
+	if type(petNames) == "table" then
+		notificationLabel.Text = "You received pets: " .. table.concat(petNames, ", ")
+	else
+		notificationLabel.Text = "You received pet: " .. petNames
+	end
 	petNotificationFrame.Visible = true
 	wait(3)
 	petNotificationFrame.Visible = false
