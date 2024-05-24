@@ -1,6 +1,6 @@
 local DataStoreService = game:GetService("DataStoreService")
 local PlayerData = DataStoreService:GetDataStore("PlayerData")
-
+f
 local function savePlayerData(player)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if leaderstats then
