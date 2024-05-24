@@ -93,37 +93,42 @@ local function loadInventory(player)
 	end
 end
 
-local function addPetToInventory(player, petName)
+local function addPetsToInventory(player, petNames)
 	local inventory = player:FindFirstChild("Inventory")
 	if inventory then
-		local existingPet = inventory:FindFirstChild(petName)
-		if existingPet then
-			local count = tonumber(existingPet.Value) or 1
-			existingPet.Value = tostring(count + 1)
-		else
-			local pet = Instance.new("StringValue")
-			pet.Name = petName
-			pet.Value = "1"
-			pet.Parent = inventory
+		for _, petName in ipairs(petNames) do
+			local existingPet = inventory:FindFirstChild(petName)
+			if existingPet then
+				local count = tonumber(existingPet.Value) or 1
+				existingPet.Value = tostring(count + 1)
+			else
+				local pet = Instance.new("StringValue")
+				pet.Name = petName
+				pet.Value = "1"
+				pet.Parent = inventory
+			end
 		end
 
 		-- Save the inventory
 		saveInventory(player)
 
-		-- Fire the client event to show the pet notification
-		petNotificationEvent:FireClient(player, petName)
+		-- Fire the client event to show the pet notification for each pet
+		for _, petName in ipairs(petNames) do
+			petNotificationEvent:FireClient(player, petName)
+		end
 
-		-- Fire the client event to update the inventory UI
+		-- Update the inventory UI on the client
 		updateInventoryEvent:FireClient(player)
 	else
-		warn("Failed to add pet to inventory. Inventory not found for player " .. player.Name)
+		warn("Failed to add pets to inventory. Inventory not found for player " .. player.Name)
 	end
 end
 
-local function getRandomPet(luck)
+local function getRandomPets(luck, count)
 	local pets = {"W1EGG1P1", "W1EGG1P2", "W1EGG1P3", "W1EGG1P4", "W1EGG1P5"}
 	local chances = {10, 20, 30, 25, 15} -- Base chances for each pet
 	local totalChance = 0
+	local petResults = {}
 
 	-- Modify chances based on luck
 	for i = 1, #chances do
@@ -131,17 +136,20 @@ local function getRandomPet(luck)
 		totalChance = totalChance + chances[i]
 	end
 
-	local randomValue = math.random(1, totalChance)
-	local cumulativeChance = 0
+	for _ = 1, count do
+		local randomValue = math.random(1, totalChance)
+		local cumulativeChance = 0
 
-	for i, chance in ipairs(chances) do
-		cumulativeChance = cumulativeChance + chance
-		if randomValue <= cumulativeChance then
-			return pets[i]
+		for i, chance in ipairs(chances) do
+			cumulativeChance = cumulativeChance + chance
+			if randomValue <= cumulativeChance then
+				table.insert(petResults, pets[i])
+				break
+			end
 		end
 	end
 
-	return pets[1] -- Fallback in case of an error
+	return petResults
 end
 
 game.Players.PlayerAdded:Connect(function(player)
@@ -159,8 +167,8 @@ game.Players.PlayerAdded:Connect(function(player)
 		if energy and energy.Value >= 1 then
 			energy.Value = energy.Value - 1
 
-			local petName = getRandomPet(luck)
-			addPetToInventory(player, petName)
+			local petNames = getRandomPets(luck, 5) -- Get 5 random pets
+			addPetsToInventory(player, petNames)
 		else
 			warn("Not enough energy to open the card pack for player " .. player.Name)
 		end
