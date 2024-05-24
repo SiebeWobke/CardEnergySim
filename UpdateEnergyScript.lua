@@ -1,12 +1,11 @@
+-- UpdateEnergyScript.lua
 local player = game.Players.LocalPlayer
 local leaderstats = player:WaitForChild("leaderstats")
 local energy = leaderstats:WaitForChild("Energy")
-
 local energyLabel = script.Parent
 
-local function updateEnergy()
+energy:GetPropertyChangedSignal("Value"):Connect(function()
 	energyLabel.Text = "Energy: " .. energy.Value
-end
+end)
 
-energy.Changed:Connect(updateEnergy)
-updateEnergy() -- Initial update
+energyLabel.Text = "Energy: " .. energy.Value
