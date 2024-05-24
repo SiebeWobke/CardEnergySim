@@ -1,7 +1,6 @@
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local petNotificationEvent = replicatedStorage:WaitForChild("PetNotificationEvent")
 local openCardPackEvent = replicatedStorage:WaitForChild("OpenCardPackEvent")
-local updateInventoryEvent = replicatedStorage:WaitForChild("UpdateInventoryEvent")
 local Players = game:GetService("Players")
 local DataStoreService = game:GetService("DataStoreService")
 
@@ -9,6 +8,8 @@ local InventoryDataStore = DataStoreService:GetDataStore("InventoryDataStore")
 local SAVE_COOLDOWN = 6 -- 6 seconds cooldown for saving
 local pendingSaves = {}
 local debounce = {}
+
+local CARD_PACK_COST = 1 -- Fixed cost for a card pack
 
 local function saveInventory(player)
 	local userId = player.UserId
@@ -112,36 +113,9 @@ local function addPetToInventory(player, petName)
 
 		-- Fire the client event to show the pet notification
 		petNotificationEvent:FireClient(player, petName)
-
-		-- Fire the client event to update the inventory UI
-		updateInventoryEvent:FireClient(player)
 	else
 		warn("Failed to add pet to inventory. Inventory not found for player " .. player.Name)
 	end
-end
-
-local function getRandomPet(luck)
-	local pets = {"W1EGG1P1", "W1EGG1P2", "W1EGG1P3", "W1EGG1P4", "W1EGG1P5"}
-	local chances = {10, 20, 30, 25, 15} -- Base chances for each pet
-	local totalChance = 0
-
-	-- Modify chances based on luck
-	for i = 1, #chances do
-		chances[i] = chances[i] + luck
-		totalChance = totalChance + chances[i]
-	end
-
-	local randomValue = math.random(1, totalChance)
-	local cumulativeChance = 0
-
-	for i, chance in ipairs(chances) do
-		cumulativeChance = cumulativeChance + chance
-		if randomValue <= cumulativeChance then
-			return pets[i]
-		end
-	end
-
-	return pets[1] -- Fallback in case of an error
 end
 
 game.Players.PlayerAdded:Connect(function(player)
@@ -154,12 +128,11 @@ game.Players.PlayerAdded:Connect(function(player)
 	openCardPackEvent.OnServerEvent:Connect(function(player)
 		local leaderstats = player:FindFirstChild("leaderstats")
 		local energy = leaderstats and leaderstats:FindFirstChild("Energy")
-		local luck = player:FindFirstChild("Luck") and player.Luck.Value or 1
+		if energy and energy.Value >= CARD_PACK_COST then
+			energy.Value = energy.Value - CARD_PACK_COST
 
-		if energy and energy.Value >= 1 then
-			energy.Value = energy.Value - 1
-
-			local petName = getRandomPet(luck)
+			local pets = {"W1EGG1P1", "W1EGG1P2", "W1EGG1P3", "W1EGG1P4", "W1EGG1P5"}
+			local petName = pets[math.random(#pets)]
 			addPetToInventory(player, petName)
 		else
 			warn("Not enough energy to open the card pack for player " .. player.Name)
