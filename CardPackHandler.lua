@@ -89,7 +89,7 @@ local function loadInventory(player)
 			print("No inventory data found for player " .. player.Name)
 		end
 	else
-		warn("Failed to load inventory for player " .. player Name .. " after retries")
+		warn("Failed to load inventory for player " .. player.Name .. " after retries")
 	end
 end
 
