@@ -156,8 +156,8 @@ game.Players.PlayerAdded:Connect(function(player)
 		local energy = leaderstats and leaderstats:FindFirstChild("Energy")
 		local luck = player:FindFirstChild("Luck") and player.Luck.Value or 1
 
-		if energy and energy.Value >= 25 then
-			energy.Value = energy.Value - 25
+		if energy and energy.Value >= 1 then
+			energy.Value = energy.Value - 1
 
 			local petName = getRandomPet(luck)
 			addPetToInventory(player, petName)
