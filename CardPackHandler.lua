@@ -9,8 +9,6 @@ local SAVE_COOLDOWN = 6 -- 6 seconds cooldown for saving
 local pendingSaves = {}
 local debounce = {}
 
-local CARD_PACK_COST = 1 -- Fixed cost for a card pack
-
 local function saveInventory(player)
 	local userId = player.UserId
 	if not pendingSaves[userId] then
@@ -90,7 +88,7 @@ local function loadInventory(player)
 			print("No inventory data found for player " .. player.Name)
 		end
 	else
-		warn("Failed to load inventory for player " .. player.Name .. " after retries")
+		warn("Failed to load inventory for player " .. player Name .. " after retries")
 	end
 end
 
@@ -128,11 +126,15 @@ game.Players.PlayerAdded:Connect(function(player)
 	openCardPackEvent.OnServerEvent:Connect(function(player)
 		local leaderstats = player:FindFirstChild("leaderstats")
 		local energy = leaderstats and leaderstats:FindFirstChild("Energy")
-		if energy and energy.Value >= CARD_PACK_COST then
-			energy.Value = energy.Value - CARD_PACK_COST
+		local luck = player:FindFirstChild("Luck") and player.Luck.Value or 1
+
+		local cardPackCost = 25 -- Set card pack cost independently
+
+		if energy and energy.Value >= cardPackCost then
+			energy.Value = energy.Value - cardPackCost
 
 			local pets = {"W1EGG1P1", "W1EGG1P2", "W1EGG1P3", "W1EGG1P4", "W1EGG1P5"}
-			local petName = pets[math.random(#pets)]
+			local petName = getRandomPet(luck)
 			addPetToInventory(player, petName)
 		else
 			warn("Not enough energy to open the card pack for player " .. player.Name)
