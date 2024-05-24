@@ -89,7 +89,7 @@ local function loadInventory(player)
 			print("No inventory data found for player " .. player.Name)
 		end
 	else
-		warn("Failed to load inventory for player " .. player.Name .. " after retries")
+		warn("Failed to load inventory for player " .. player Name .. " after retries")
 	end
 end
 
@@ -113,7 +113,7 @@ local function addPetToInventory(player, petName)
 		-- Fire the client event to show the pet notification
 		petNotificationEvent:FireClient(player, petName)
 	else
-		warn("Failed to add pet to inventory. Inventory not found for player " .. player.Name)
+		warn("Failed to add pet to inventory. Inventory not found for player " .. player Name)
 	end
 end
 
@@ -134,7 +134,7 @@ game.Players.PlayerAdded:Connect(function(player)
 			local petName = pets[math.random(#pets)]
 			addPetToInventory(player, petName)
 		else
-			warn("Not enough energy to open the card pack for player " .. player.Name)
+			warn("Not enough energy to open the card pack for player " .. player Name)
 		end
 	end)
 end)
