@@ -1,7 +1,6 @@
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local petNotificationEvent = replicatedStorage:WaitForChild("PetNotificationEvent")
 local openCardPackEvent = replicatedStorage:WaitForChild("OpenCardPackEvent")
-local updateInventoryEvent = replicatedStorage:WaitForChild("UpdateInventoryEvent")
 local Players = game:GetService("Players")
 local DataStoreService = game:GetService("DataStoreService")
 
@@ -93,7 +92,31 @@ local function loadInventory(player)
 	end
 end
 
-local function addPetsToInventory(player, petNames)
+local function addPetToInventory(player, petName)
+	local inventory = player:FindFirstChild("Inventory")
+	if inventory then
+		local existingPet = inventory:FindFirstChild(petName)
+		if existingPet then
+			local count = tonumber(existingPet.Value) or 1
+			existingPet.Value = tostring(count + 1)
+		else
+			local pet = Instance.new("StringValue")
+			pet.Name = petName
+			pet.Value = "1"
+			pet.Parent = inventory
+		end
+
+		-- Save the inventory
+		saveInventory(player)
+
+		-- Fire the client event to show the pet notification
+		petNotificationEvent:FireClient(player, petName)
+	else
+		warn("Failed to add pet to inventory. Inventory not found for player " .. player.Name)
+	end
+end
+
+local function addMultiplePetsToInventory(player, petNames)
 	local inventory = player:FindFirstChild("Inventory")
 	if inventory then
 		for _, petName in ipairs(petNames) do
@@ -112,23 +135,17 @@ local function addPetsToInventory(player, petNames)
 		-- Save the inventory
 		saveInventory(player)
 
-		-- Fire the client event to show the pet notification for each pet
-		for _, petName in ipairs(petNames) do
-			petNotificationEvent:FireClient(player, petName)
-		end
-
-		-- Update the inventory UI on the client
-		updateInventoryEvent:FireClient(player)
+		-- Fire the client event to show the pet notification
+		petNotificationEvent:FireClient(player, petNames)
 	else
 		warn("Failed to add pets to inventory. Inventory not found for player " .. player.Name)
 	end
 end
 
-local function getRandomPets(luck, count)
+local function getRandomPets(luck, numPets)
 	local pets = {"W1EGG1P1", "W1EGG1P2", "W1EGG1P3", "W1EGG1P4", "W1EGG1P5"}
 	local chances = {10, 20, 30, 25, 15} -- Base chances for each pet
 	local totalChance = 0
-	local petResults = {}
 
 	-- Modify chances based on luck
 	for i = 1, #chances do
@@ -136,20 +153,21 @@ local function getRandomPets(luck, count)
 		totalChance = totalChance + chances[i]
 	end
 
-	for _ = 1, count do
+	local selectedPets = {}
+	for _ = 1, numPets do
 		local randomValue = math.random(1, totalChance)
 		local cumulativeChance = 0
 
 		for i, chance in ipairs(chances) do
 			cumulativeChance = cumulativeChance + chance
 			if randomValue <= cumulativeChance then
-				table.insert(petResults, pets[i])
+				table.insert(selectedPets, pets[i])
 				break
 			end
 		end
 	end
 
-	return petResults
+	return selectedPets
 end
 
 game.Players.PlayerAdded:Connect(function(player)
@@ -168,7 +186,7 @@ game.Players.PlayerAdded:Connect(function(player)
 			energy.Value = energy.Value - 1
 
 			local petNames = getRandomPets(luck, 5) -- Get 5 random pets
-			addPetsToInventory(player, petNames)
+			addMultiplePetsToInventory(player, petNames)
 		else
 			warn("Not enough energy to open the card pack for player " .. player.Name)
 		end
