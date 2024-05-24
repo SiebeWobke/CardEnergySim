@@ -1,5 +1,6 @@
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
+local updateInventoryEvent = replicatedStorage:WaitForChild("UpdateInventoryEvent")
 local inventoryGui = player:WaitForChild("PlayerGui"):WaitForChild("InventoryGui")
 local inventoryFrame = inventoryGui:WaitForChild("InventoryFrame")
 local inventoryScrollingFrame = inventoryFrame:WaitForChild("InventoryScrollingFrame")
@@ -8,15 +9,11 @@ local openInventoryButton = player:WaitForChild("PlayerGui"):WaitForChild("MainG
 local petNotificationGui = player:WaitForChild("PlayerGui"):WaitForChild("PetNotificationGui")
 local petNotificationFrame = petNotificationGui:WaitForChild("PetNotificationFrame")
 
--- Add this line to define the event
-local updateInventoryEvent = replicatedStorage:WaitForChild("UpdateInventoryEvent")
-
 -- Hide notification frame initially
 petNotificationFrame.Visible = false
 
 -- Function to update the inventory UI
 local function updateInventoryUI()
-	print("Updating inventory UI") -- Debugging
 	-- Clear existing items
 	for _, child in pairs(inventoryScrollingFrame:GetChildren()) do
 		if child:IsA("TextLabel") and child ~= petTemplate then
@@ -31,11 +28,11 @@ local function updateInventoryUI()
 
 		-- Count the number of each item
 		for _, pet in pairs(inventory:GetChildren()) do
-			if pet:IsA("StringValue") then
+			if pet:IsA("IntValue") then
 				if itemCounts[pet.Name] then
-					itemCounts[pet.Name] = itemCounts[pet.Name] + tonumber(pet.Value)
+					itemCounts[pet.Name] = itemCounts[pet.Name] + pet.Value
 				else
-					itemCounts[pet.Name] = tonumber(pet.Value)
+					itemCounts[pet.Name] = pet.Value
 				end
 			end
 		end
@@ -51,8 +48,6 @@ local function updateInventoryUI()
 			newPetLabel.Visible = true
 			newPetLabel.Parent = inventoryScrollingFrame
 		end
-	else
-		print("No inventory found for player") -- Debugging
 	end
 
 	-- Adjust the canvas size of the scrolling frame
@@ -62,7 +57,6 @@ end
 -- Event to update the inventory UI when the inventory changes
 player.ChildAdded:Connect(function(child)
 	if child.Name == "Inventory" then
-		print("Inventory added to player") -- Debugging
 		child.ChildAdded:Connect(updateInventoryUI)
 		child.ChildRemoved:Connect(updateInventoryUI)
 		updateInventoryUI()
@@ -71,12 +65,9 @@ end)
 
 -- Initial update
 if player:FindFirstChild("Inventory") then
-	print("Player already has an inventory") -- Debugging
 	player.Inventory.ChildAdded:Connect(updateInventoryUI)
 	player.Inventory.ChildRemoved:Connect(updateInventoryUI)
 	updateInventoryUI()
-else
-	print("Player does not have an inventory initially") -- Debugging
 end
 
 -- Function to toggle the inventory frame visibility
@@ -88,9 +79,9 @@ end
 openInventoryButton.MouseButton1Click:Connect(toggleInventory)
 
 -- Function to show pet notification
-local function showPetNotification(petName)
+local function showPetNotification(petNames)
 	local notificationLabel = petNotificationFrame:WaitForChild("NotificationLabel")
-	notificationLabel.Text = "You received a pet: " .. petName
+	notificationLabel.Text = "You received pets: " .. table.concat(petNames, ", ")
 	petNotificationFrame.Visible = true
 	wait(3)
 	petNotificationFrame.Visible = false
