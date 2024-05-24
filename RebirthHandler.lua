@@ -1,8 +1,7 @@
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local rebirthEvent = replicatedStorage:WaitForChild("RebirthEvent")
 local DataStoreService = game:GetService("DataStoreService")
-local Players = game:GetService("Players")
-
-local RebirthDataStore = DataStoreService:GetDataStore("RebirthDataStore")
-local LuckDataStore = DataStoreService:GetDataStore("LuckDataStore")
+local playerDataStore = DataStoreService:GetDataStore("PlayerDataStore")
 
 local rebirthRequirements = {
 	10, 125, 187.5, 375, 1125, 5625, 7031.25, 10546.875, 21093.75, 63281.25,
@@ -14,85 +13,92 @@ local rebirthRequirements = {
 	5939316004514.694, 11878632009029.388, 35635896027088.164
 }
 
-local function saveRebirthData(player)
+local function getPlayerMultiplier(player)
+	return player:FindFirstChild("leaderstats"):FindFirstChild("Multiplier").Value
+end
+
+local function increasePlayerMultiplier(player, amount)
+	local multiplier = player:FindFirstChild("leaderstats"):FindFirstChild("Multiplier")
+	multiplier.Value = multiplier.Value + amount
+end
+
+local function savePlayerData(player)
 	local userId = player.UserId
-	local rebirths = player.leaderstats.Rebirths.Value
-	local luck = player:FindFirstChild("Luck") and player.Luck.Value or 1
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if leaderstats then
+		local rebirths = leaderstats:FindFirstChild("Rebirths").Value
+		local superRebirths = leaderstats:FindFirstChild("SuperRebirths").Value
+		local multiplier = leaderstats:FindFirstChild("Multiplier").Value
+		local luck = player:FindFirstChild("Luck").Value
 
-	local success, err = pcall(function()
-		RebirthDataStore:SetAsync(userId, rebirths)
-		LuckDataStore:SetAsync(userId, luck)
-	end)
+		local success, err = pcall(function()
+			playerDataStore:SetAsync(userId, {
+				rebirths = rebirths,
+				superRebirths = superRebirths,
+				multiplier = multiplier,
+				luck = luck
+			})
+		end)
 
-	if not success then
-		warn("Failed to save rebirth data for userId " .. userId .. ": " .. err)
+		if not success then
+			warn("Failed to save player data for userId " .. userId .. ": " .. err)
+		else
+			print("Successfully saved player data for userId " .. userId)
+		end
 	end
 end
 
-local function loadRebirthData(player)
+local function loadPlayerData(player)
 	local userId = player.UserId
-
-	local rebirths, luck
-
-	local success, err = pcall(function()
-		rebirths = RebirthDataStore:GetAsync(userId)
-		luck = LuckDataStore:GetAsync(userId)
+	local success, data = pcall(function()
+		return playerDataStore:GetAsync(userId)
 	end)
 
-	if success then
-		player.leaderstats.Rebirths.Value = rebirths or 0
-		player.Luck.Value = luck or 1
+	if success and data then
+		local leaderstats = player:FindFirstChild("leaderstats")
+		if leaderstats then
+			leaderstats:FindFirstChild("Rebirths").Value = data.rebirths or 0
+			leaderstats:FindFirstChild("SuperRebirths").Value = data.superRebirths or 0
+			leaderstats:FindFirstChild("Multiplier").Value = data.multiplier or 1
+		end
+		player:FindFirstChild("Luck").Value = data.luck or 1
+		print("Successfully loaded player data for userId " .. userId)
 	else
-		warn("Failed to load rebirth data for userId " .. userId .. ": " .. err)
+		print("Failed to load player data for userId " .. userId .. ": " .. tostring(data))
 	end
 end
 
 game.Players.PlayerAdded:Connect(function(player)
-	local leaderstats = Instance.new("Folder")
-	leaderstats.Name = "leaderstats"
-	leaderstats.Parent = player
-
-	local rebirths = Instance.new("IntValue")
-	rebirths.Name = "Rebirths"
-	rebirths.Parent = leaderstats
-
-	local luck = Instance.new("IntValue")
-	luck.Name = "Luck"
-	luck.Parent = player
-
-	loadRebirthData(player)
-
-	rebirths.Changed:Connect(function()
-		saveRebirthData(player)
-	end)
-
-	luck.Changed:Connect(function()
-		saveRebirthData(player)
-	end)
+	loadPlayerData(player)
 end)
 
 game.Players.PlayerRemoving:Connect(function(player)
-	saveRebirthData(player)
+	savePlayerData(player)
 end)
 
-local function handleRebirth(player)
-	local rebirths = player.leaderstats.Rebirths.Value
-	local currentEnergy = player:FindFirstChild("Energy") and player.Energy.Value or 0
-	local requiredEnergy = rebirthRequirements[rebirths + 1] or 0
+rebirthEvent.OnServerEvent:Connect(function(player)
+	local energy = player:FindFirstChild("leaderstats"):FindFirstChild("Energy").Value
+	local rebirths = player:FindFirstChild("leaderstats"):FindFirstChild("Rebirths").Value
 
-	if currentEnergy >= requiredEnergy then
-		player.Energy.Value = 0
-		player.leaderstats.Rebirths.Value = rebirths + 1
-		player.Luck.Value = player.Luck.Value + 1
+	if rebirths < #rebirthRequirements and energy >= rebirthRequirements[rebirths + 1] then
+		player:FindFirstChild("leaderstats"):FindFirstChild("Energy").Value = 0
+		player:FindFirstChild("leaderstats"):FindFirstChild("Rebirths").Value = rebirths + 1
 
+		-- Increase player's luck
+		local luck = player:FindFirstChild("Luck")
+		luck.Value = luck.Value + 1
+
+		-- Check if we should double the luck value
 		if (rebirths + 1) % 10 == 0 then
-			player.Luck.Value = player.Luck.Value * 2
+			luck.Value = luck.Value * 2
 		end
 
-		print("Rebirth successful! New rebirth count: " .. player.leaderstats.Rebirths.Value .. ", New luck value: " .. player.Luck.Value)
-	else
-		warn("Not enough energy to rebirth. Required: " .. requiredEnergy .. ", Current: " .. currentEnergy)
-	end
-end
+		-- Increase the multiplier (energy gain)
+		increasePlayerMultiplier(player, 1)
 
-game.ReplicatedStorage:WaitForChild("RebirthEvent").OnServerEvent:Connect(handleRebirth)
+		-- Save player data
+		savePlayerData(player)
+
+		print("Rebirth successful! New rebirth count: " .. (rebirths + 1) .. ", New luck value: " .. luck.Value)
+	end
+end)
