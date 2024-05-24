@@ -1,4 +1,3 @@
--- CardPackHandler.lua
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local petNotificationEvent = replicatedStorage:WaitForChild("PetNotificationEvent")
 local openCardPackEvent = replicatedStorage:WaitForChild("OpenCardPackEvent")
@@ -86,7 +85,7 @@ local function loadInventory(player)
 			end
 			print("Inventory loaded for player " .. player.Name)
 		else
-			print("No inventory data found for player " .. player.Name)
+			print("No inventory data found for player " .. player Name)
 		end
 	else
 		warn("Failed to load inventory for player " .. player Name .. " after retries")
