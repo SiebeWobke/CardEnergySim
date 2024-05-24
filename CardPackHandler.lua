@@ -8,6 +8,7 @@ local InventoryDataStore = DataStoreService:GetDataStore("InventoryDataStore")
 local SAVE_COOLDOWN = 6 -- 6 seconds cooldown for saving
 local pendingSaves = {}
 local debounce = {}
+local CARD_PACK_COST = 1 -- Set the fixed cost of opening a card pack
 
 local function saveInventory(player)
 	local userId = player.UserId
@@ -126,15 +127,11 @@ game.Players.PlayerAdded:Connect(function(player)
 	openCardPackEvent.OnServerEvent:Connect(function(player)
 		local leaderstats = player:FindFirstChild("leaderstats")
 		local energy = leaderstats and leaderstats:FindFirstChild("Energy")
-		local luck = player:FindFirstChild("Luck") and player.Luck.Value or 1
-
-		local cardPackCost = 25 -- Set card pack cost independently
-
-		if energy and energy.Value >= cardPackCost then
-			energy.Value = energy.Value - cardPackCost
+		if energy and energy.Value >= CARD_PACK_COST then
+			energy.Value = energy.Value - CARD_PACK_COST
 
 			local pets = {"W1EGG1P1", "W1EGG1P2", "W1EGG1P3", "W1EGG1P4", "W1EGG1P5"}
-			local petName = getRandomPet(luck)
+			local petName = pets[math.random(#pets)]
 			addPetToInventory(player, petName)
 		else
 			warn("Not enough energy to open the card pack for player " .. player.Name)
