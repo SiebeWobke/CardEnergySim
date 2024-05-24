@@ -1,5 +1,8 @@
+-- InventoryHandler (Server Script)
+
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local cardPackOpenedEvent = replicatedStorage:WaitForChild("CardPackOpenedEvent")
+local updateInventoryEvent = replicatedStorage:WaitForChild("UpdateInventoryEvent")
 
 local function addPetToInventory(player, petName)
 	if not player:FindFirstChild("Inventory") then
@@ -17,12 +20,13 @@ local function addPetToInventory(player, petName)
 		pet.Name = petName
 		pet.Value = 1
 	end
-
-	cardPackOpenedEvent:FireClient(player, petName)  -- Notify the client to update the UI
 end
 
-cardPackOpenedEvent.OnServerEvent:Connect(function(player, petName)
-	if petName then
-		addPetToInventory(player, petName)
+cardPackOpenedEvent.OnServerEvent:Connect(function(player, petNames)
+	if petNames then
+		for _, petName in ipairs(petNames) do
+			addPetToInventory(player, petName)
+		end
+		updateInventoryEvent:FireClient(player)
 	end
 end)
