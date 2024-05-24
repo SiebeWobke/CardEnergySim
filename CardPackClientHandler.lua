@@ -25,16 +25,32 @@ local function updateInventoryUI()
 	-- Get the player's inventory
 	local inventory = player:FindFirstChild("Inventory")
 	if inventory then
+		local itemCounts = {}
+
+		-- Count the number of each item
 		for _, pet in pairs(inventory:GetChildren()) do
+			if pet:IsA("StringValue") then
+				if itemCounts[pet.Name] then
+					itemCounts[pet.Name] = itemCounts[pet.Name] + tonumber(pet.Value)
+				else
+					itemCounts[pet.Name] = tonumber(pet.Value)
+				end
+			end
+		end
+
+		-- Update the UI with the item counts
+		for petName, count in pairs(itemCounts) do
 			local newPetLabel = petTemplate:Clone()
-			if tonumber(pet.Value) > 1 then
-				newPetLabel.Text = pet.Name .. " x" .. pet.Value
+			if count > 1 then
+				newPetLabel.Text = petName .. " x" .. count
 			else
-				newPetLabel.Text = pet.Name
+				newPetLabel.Text = petName
 			end
 			newPetLabel.Visible = true
 			newPetLabel.Parent = inventoryScrollingFrame
 		end
+	else
+		print("No inventory found for player") -- Debugging
 	end
 
 	-- Adjust the canvas size of the scrolling frame
@@ -44,6 +60,7 @@ end
 -- Event to update the inventory UI when the inventory changes
 player.ChildAdded:Connect(function(child)
 	if child.Name == "Inventory" then
+		print("Inventory added to player") -- Debugging
 		child.ChildAdded:Connect(updateInventoryUI)
 		child.ChildRemoved:Connect(updateInventoryUI)
 		updateInventoryUI()
@@ -52,9 +69,12 @@ end)
 
 -- Initial update
 if player:FindFirstChild("Inventory") then
+	print("Player already has an inventory") -- Debugging
 	player.Inventory.ChildAdded:Connect(updateInventoryUI)
 	player.Inventory.ChildRemoved:Connect(updateInventoryUI)
 	updateInventoryUI()
+else
+	print("Player does not have an inventory initially") -- Debugging
 end
 
 -- Function to toggle the inventory frame visibility
@@ -67,12 +87,12 @@ openInventoryButton.MouseButton1Click:Connect(toggleInventory)
 
 -- Function to show pet notification
 local function showPetNotification(petNames)
-	local notificationLabel = petNotificationFrame:WaitForChild("NotificationLabel")
-	if type(petNames) == "table" then
-		notificationLabel.Text = "You received pets: " .. table.concat(petNames, ", ")
-	else
-		notificationLabel.Text = "You received pet: " .. petNames
+	if type(petNames) == "string" then
+		petNames = {petNames}
 	end
+
+	local notificationLabel = petNotificationFrame:WaitForChild("NotificationLabel")
+	notificationLabel.Text = "You received pets: " .. table.concat(petNames, ", ")
 	petNotificationFrame.Visible = true
 	wait(3)
 	petNotificationFrame.Visible = false
