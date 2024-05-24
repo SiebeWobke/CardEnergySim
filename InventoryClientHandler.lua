@@ -1,3 +1,5 @@
+-- InventoryClientHandler (LocalScript)
+
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local inventoryGui = player:WaitForChild("PlayerGui"):WaitForChild("InventoryGui")
@@ -7,9 +9,6 @@ local petTemplate = inventoryScrollingFrame:WaitForChild("PetTemplate")
 local openInventoryButton = player:WaitForChild("PlayerGui"):WaitForChild("MainGui"):WaitForChild("OpenInventoryButton")
 local petNotificationGui = player:WaitForChild("PlayerGui"):WaitForChild("PetNotificationGui")
 local petNotificationFrame = petNotificationGui:WaitForChild("PetNotificationFrame")
-
--- Add this line to define the event
-local updateInventoryEvent = replicatedStorage:WaitForChild("UpdateInventoryEvent")
 
 -- Hide notification frame initially
 petNotificationFrame.Visible = false
@@ -88,9 +87,13 @@ end
 openInventoryButton.MouseButton1Click:Connect(toggleInventory)
 
 -- Function to show pet notification
-local function showPetNotification(petName)
+local function showPetNotification(petNames)
 	local notificationLabel = petNotificationFrame:WaitForChild("NotificationLabel")
-	notificationLabel.Text = "You received a pet: " .. petName
+	if type(petNames) == "table" then
+		notificationLabel.Text = "You received pets: " .. table.concat(petNames, ", ")
+	else
+		notificationLabel.Text = "You received a pet: " .. tostring(petNames)
+	end
 	petNotificationFrame.Visible = true
 	wait(3)
 	petNotificationFrame.Visible = false
@@ -100,4 +103,4 @@ end
 replicatedStorage:WaitForChild("PetNotificationEvent").OnClientEvent:Connect(showPetNotification)
 
 -- Listen for inventory update event
-updateInventoryEvent.OnClientEvent:Connect(updateInventoryUI)
+replicatedStorage:WaitForChild("UpdateInventoryEvent").OnClientEvent:Connect(updateInventoryUI)
