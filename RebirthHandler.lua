@@ -1,7 +1,5 @@
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local rebirthEvent = replicatedStorage:WaitForChild("RebirthEvent")
-local DataStoreService = game:GetService("DataStoreService")
-local playerDataStore = DataStoreService:GetDataStore("PlayerDataStore")
 
 local rebirthRequirements = {
 	10, 125, 187.5, 375, 1125, 5625, 7031.25, 10546.875, 21093.75, 63281.25,
@@ -13,30 +11,38 @@ local rebirthRequirements = {
 	5939316004514.694, 11878632009029.388, 35635896027088.164
 }
 
-local function getPlayerMultiplier(player)
-	return player:FindFirstChild("leaderstats"):FindFirstChild("Multiplier").Value
-end
-
-local function increasePlayerMultiplier(player, amount)
-	local multiplier = player:FindFirstChild("leaderstats"):FindFirstChild("Multiplier")
-	multiplier.Value = multiplier.Value + amount
+local function setPlayerMultiplierAndLuck(player, value)
+	local leaderstats = player:FindFirstChild("leaderstats")
+	if leaderstats then
+		local multiplier = leaderstats:FindFirstChild("Multiplier")
+		local luck = leaderstats:FindFirstChild("Luck")
+		if multiplier then
+			multiplier.Value = value
+			print("Updated Multiplier: " .. multiplier.Value)  -- Debugging line
+		end
+		if luck then
+			luck.Value = value
+			print("Updated Luck: " .. luck.Value)  -- Debugging line
+		end
+	end
 end
 
 rebirthEvent.OnServerEvent:Connect(function(player)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if leaderstats then
+		local energy = leaderstats:FindFirstChild("Energy")
 		local rebirths = leaderstats:FindFirstChild("Rebirths")
 		local superRebirths = leaderstats:FindFirstChild("SuperRebirths")
-		if rebirths and superRebirths then
-			local requiredRebirths = rebirthRequirements[superRebirths.Value + 1] or math.huge
-			if rebirths.Value >= requiredRebirths then
-				rebirths.Value = 0
-				superRebirths.Value = superRebirths.Value + 1
-				increasePlayerMultiplier(player, 1)
-				savePlayerData(player)
-				print("Rebirth successful! New rebirth count: " .. superRebirths.Value)
+		if energy and rebirths and superRebirths then
+			local requiredEnergy = rebirthRequirements[rebirths.Value + 1] or math.huge
+			if energy.Value >= requiredEnergy then
+				rebirths.Value = rebirths.Value + 1
+				energy.Value = energy.Value - requiredEnergy -- Deduct the used energy
+				setPlayerMultiplierAndLuck(player, rebirths.Value + 1) -- Set multiplier and luck to rebirths + 1
+				_G.savePlayerData(player)
+				print("Rebirth successful! New rebirth count: " .. rebirths.Value)
 			else
-				warn("Not enough rebirths for super rebirth")
+				warn("Not enough energy for regular rebirth")
 			end
 		end
 	end
