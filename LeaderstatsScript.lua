@@ -23,7 +23,7 @@ _G.savePlayerData = function(player)
 			Energy = leaderstats:FindFirstChild("Energy") and leaderstats.Energy.Value or 0,
 			Rebirths = leaderstats:FindFirstChild("Rebirths") and leaderstats.Rebirths.Value or 0,
 			SuperRebirths = leaderstats:FindFirstChild("SuperRebirths") and leaderstats.SuperRebirths.Value or 0,
-			Multiplier = player:FindFirstChild("Multiplier") and player.Multiplier.Value or 1, -- Moved Multiplier out of leaderstats
+			Multiplier = player:FindFirstChild("Multiplier") and player.Multiplier.Value or 1, -- Ensure Multiplier is saved from player
 			Luck = leaderstats:FindFirstChild("Luck") and leaderstats.Luck.Value or 1 -- Ensure Luck is saved from leaderstats
 		}
 
@@ -74,7 +74,7 @@ local function loadPlayerData(player)
 		superRebirths.Value = data.SuperRebirths or 0
 		superRebirths.Parent = leaderstats
 
-		local multiplier = player:FindFirstChild("Multiplier") or Instance.new("IntValue") -- Moved Multiplier out of leaderstats
+		local multiplier = player:FindFirstChild("Multiplier") or Instance.new("IntValue")
 		multiplier.Name = "Multiplier"
 		multiplier.Value = data.Multiplier or 1
 		multiplier.Parent = player
@@ -143,10 +143,10 @@ game.Players.PlayerAdded:Connect(function(player)
 	superRebirths.Value = 0
 	superRebirths.Parent = leaderstats
 
-	local multiplier = Instance.new("IntValue")
+	local multiplier = player:FindFirstChild("Multiplier") or Instance.new("IntValue")
 	multiplier.Name = "Multiplier"
 	multiplier.Value = 1
-	multiplier.Parent = player -- Moved Multiplier out of leaderstats
+	multiplier.Parent = player -- Ensure Multiplier is part of player, not leaderstats
 
 	local luck = Instance.new("IntValue")
 	luck.Name = "Luck"
