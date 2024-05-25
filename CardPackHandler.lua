@@ -2,96 +2,6 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local petNotificationEvent = replicatedStorage:WaitForChild("PetNotificationEvent")
 local openCardPackEvent = replicatedStorage:WaitForChild("OpenCardPackEvent")
 local updateInventoryEvent = replicatedStorage:WaitForChild("UpdateInventoryEvent")
-local Players = game:GetService("Players")
-local DataStoreService = game:GetService("DataStoreService")
-
-local InventoryDataStore = DataStoreService:GetDataStore("InventoryDataStore")
-local SAVE_COOLDOWN = 6 -- 6 seconds cooldown for saving
-local pendingSaves = {}
-local debounce = {}
-
-local function saveInventory(player)
-	local userId = player.UserId
-	if not pendingSaves[userId] then
-		pendingSaves[userId] = true
-
-		delay(SAVE_COOLDOWN, function()
-			if debounce[userId] then
-				debounce[userId] = false
-				return
-			end
-
-			local inventory = player:FindFirstChild("Inventory")
-			if inventory then
-				local petNames = {}
-				for _, pet in pairs(inventory:GetChildren()) do
-					table.insert(petNames, pet.Name .. "x" .. pet.Value)
-				end
-
-				local success, err = pcall(function()
-					InventoryDataStore:SetAsync(userId, petNames)
-				end)
-				if success then
-					print("Successfully saved inventory for userId " .. userId)
-				else
-					warn("Failed to save inventory for userId " .. userId .. ": " .. err)
-					-- Retry after cooldown if failed
-					wait(SAVE_COOLDOWN)
-					saveInventory(player)
-				end
-			end
-			pendingSaves[userId] = nil
-		end)
-	else
-		debounce[userId] = true
-	end
-end
-
-local function loadInventory(player)
-	local retries = 3
-	local success, petNames
-
-	repeat
-		success, petNames = pcall(function()
-			return InventoryDataStore:GetAsync(player.UserId)
-		end)
-		if not success then
-			warn("Failed to load inventory for player " .. player.Name .. ": " .. petNames)
-			retries = retries - 1
-			wait(2) -- Wait for 2 seconds before retrying
-		end
-	until success or retries == 0
-
-	if success then
-		local inventory = player:FindFirstChild("Inventory") or Instance.new("Folder")
-		inventory.Name = "Inventory"
-		inventory.Parent = player
-
-		if petNames then
-			for _, petData in pairs(petNames) do
-				local petName, count = string.match(petData, "(.+)x(%d+)")
-				if petName and count then
-					local pet = Instance.new("StringValue")
-					pet.Name = petName
-					pet.Value = count
-					pet.Parent = inventory
-				else
-					-- Handle old format without count
-					local pet = Instance.new("StringValue")
-					pet.Name = petData
-					pet.Value = "1"
-					pet.Parent = inventory
-					print("Loaded pet in old format: " .. petData)
-				end
-			end
-			print("Inventory loaded for player " .. player.Name)
-		else
-			print("No inventory data found for player " .. player.Name)
-		end
-	else
-		warn("Failed to load inventory for player " .. player.Name .. " after retries")
-	end
-end
 
 local function addPetToInventory(player, petName)
 	local inventory = player:FindFirstChild("Inventory")
@@ -107,11 +17,11 @@ local function addPetToInventory(player, petName)
 			pet.Parent = inventory
 		end
 
-		-- Save the inventory
-		saveInventory(player)
-
 		-- Fire the client event to show the pet notification
 		petNotificationEvent:FireClient(player, petName)
+
+		-- Save player data whenever the inventory is updated
+		_G.savePlayerData(player)
 	else
 		warn("Failed to add pet to inventory. Inventory not found for player " .. player.Name)
 	end
@@ -145,34 +55,27 @@ local function getRandomPets(luck, count)
 	return selectedPets
 end
 
-game.Players.PlayerAdded:Connect(function(player)
-	local inventory = Instance.new("Folder")
-	inventory.Name = "Inventory"
-	inventory.Parent = player
+-- Event handler for opening a card pack
+openCardPackEvent.OnServerEvent:Connect(function(player)
+	local leaderstats = player:FindFirstChild("leaderstats")
+	local energy = leaderstats and leaderstats:FindFirstChild("Energy")
+	local luck = player:FindFirstChild("Luck") and player.Luck.Value or 1
 
-	loadInventory(player)
+	if energy and energy.Value >= 1 then
+		energy.Value = energy.Value - 1
 
-	openCardPackEvent.OnServerEvent:Connect(function(player)
-		local leaderstats = player:FindFirstChild("leaderstats")
-		local energy = leaderstats and leaderstats:FindFirstChild("Energy")
-		local luck = player:FindFirstChild("Luck") and player.Luck.Value or 1
-
-		if energy and energy.Value >= 1 then
-			energy.Value = energy.Value - 1
-
-			local petNames = getRandomPets(luck, 5)
-			for _, petName in pairs(petNames) do
-				addPetToInventory(player, petName)
-			end
-
-			-- Fire the client event to update the inventory UI
-			updateInventoryEvent:FireClient(player)
-		else
-			warn("Not enough energy to open the card pack for player " .. player.Name)
+		local petNames = getRandomPets(luck, 5)
+		for _, petName in pairs(petNames) do
+			addPetToInventory(player, petName)
+			print("Added pet to inventory: " .. petName)  -- Debug statement
 		end
-	end)
-end)
 
-game.Players.PlayerRemoving:Connect(function(player)
-	saveInventory(player)
+		-- Fire the client event to update the inventory UI
+		updateInventoryEvent:FireClient(player)
+
+		-- Save player data after opening a card pack
+		_G.savePlayerData(player)
+	else
+		warn("Not enough energy to open card pack for player " .. player.Name)
+	end
 end)
