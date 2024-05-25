@@ -7,11 +7,11 @@ orb.Touched:Connect(function(hit)
 		local player = game.Players:GetPlayerFromCharacter(character)
 		if player then
 			local leaderstats = player:FindFirstChild("leaderstats")
-			if leaderstats then
+			local multiplier = player:FindFirstChild("Multiplier") -- Updated reference
+			if leaderstats and multiplier then -- Check if leaderstats and multiplier exist
 				local energy = leaderstats:FindFirstChild("Energy")
-				local multiplier = leaderstats:FindFirstChild("Multiplier")
-				if energy and multiplier then
-					local energyGain = 1 * multiplier.Value
+				if energy then
+					local energyGain = 10000 * multiplier.Value
 					print("Multiplier: ", multiplier.Value)
 					print("Energy Gain: ", energyGain)
 					energy.Value = energy.Value + energyGain
