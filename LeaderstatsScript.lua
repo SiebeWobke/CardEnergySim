@@ -23,8 +23,8 @@ _G.savePlayerData = function(player)
 			Energy = leaderstats:FindFirstChild("Energy") and leaderstats.Energy.Value or 0,
 			Rebirths = leaderstats:FindFirstChild("Rebirths") and leaderstats.Rebirths.Value or 0,
 			SuperRebirths = leaderstats:FindFirstChild("SuperRebirths") and leaderstats.SuperRebirths.Value or 0,
-			Multiplier = leaderstats:FindFirstChild("Multiplier") and leaderstats.Multiplier.Value or 1,
-			Luck = player:FindFirstChild("Luck") and player.Luck.Value or 1
+			Multiplier = player:FindFirstChild("Multiplier") and player.Multiplier.Value or 1, -- Moved Multiplier out of leaderstats
+			Luck = leaderstats:FindFirstChild("Luck") and leaderstats.Luck.Value or 1 -- Ensure Luck is saved from leaderstats
 		}
 
 		-- Save inventory
@@ -74,15 +74,18 @@ local function loadPlayerData(player)
 		superRebirths.Value = data.SuperRebirths or 0
 		superRebirths.Parent = leaderstats
 
-		local multiplier = leaderstats:FindFirstChild("Multiplier") or Instance.new("IntValue")
+		local multiplier = player:FindFirstChild("Multiplier") or Instance.new("IntValue") -- Moved Multiplier out of leaderstats
 		multiplier.Name = "Multiplier"
 		multiplier.Value = data.Multiplier or 1
-		multiplier.Parent = leaderstats
+		multiplier.Parent = player
 
-		local luck = player:FindFirstChild("Luck") or Instance.new("IntValue")
+		local luck = leaderstats:FindFirstChild("Luck") or Instance.new("IntValue")
 		luck.Name = "Luck"
 		luck.Value = data.Luck or 1
-		luck.Parent = player
+		luck.Parent = leaderstats -- Ensure Luck is part of leaderstats
+
+		-- Print Luck value for verification
+		print("Loaded Luck value for userId " .. player.UserId .. ": " .. luck.Value)
 
 		-- Load inventory
 		local inventory = player:FindFirstChild("Inventory") or Instance.new("Folder")
@@ -143,12 +146,12 @@ game.Players.PlayerAdded:Connect(function(player)
 	local multiplier = Instance.new("IntValue")
 	multiplier.Name = "Multiplier"
 	multiplier.Value = 1
-	multiplier.Parent = leaderstats
+	multiplier.Parent = player -- Moved Multiplier out of leaderstats
 
 	local luck = Instance.new("IntValue")
 	luck.Name = "Luck"
 	luck.Value = 1
-	luck.Parent = player
+	luck.Parent = leaderstats -- Ensure Luck is part of leaderstats
 
 	local inventory = Instance.new("Folder")
 	inventory.Name = "Inventory"
